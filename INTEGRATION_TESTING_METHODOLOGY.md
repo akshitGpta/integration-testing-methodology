@@ -753,81 +753,15 @@ def db_session(test_engine):
     connection.close()
 ```
 
-## Phase 6: CI/CD Integration
+## Phase 6: Running Integration Tests
 
-### 6.1 GitHub Actions Workflow
-```yaml
-# .github/workflows/integration-tests.yml
-name: Integration Tests
-
-on:
-  push:
-    branches: [main, develop]
-  pull_request:
-    branches: [main]
-
-jobs:
-  integration-tests:
-    runs-on: ubuntu-latest
-
-    services:
-      postgres:
-        image: postgres:15-alpine
-        env:
-          POSTGRES_USER: test_user
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-      redis:
-        image: redis:7-alpine
-        ports:
-          - 6379:6379
-        options: >-
-          --health-cmd "redis-cli ping"
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Set up Python
-        uses: actions/setup-python@v5
-        with:
-          python-version: '3.11'
-
-      - name: Install dependencies
-        run: |
-          pip install poetry
-          poetry install
-
-      - name: Run integration tests
-        env:
-          DATABASE_URL: postgresql://test_user:test_password@localhost:5432/test_db
-          REDIS_URL: redis://localhost:6379/0
-        run: |
-          poetry run pytest -m integration --cov=app --cov-report=xml
-
-      - name: Upload coverage
-        uses: codecov/codecov-action@v3
-        with:
-          file: ./coverage.xml
-```
-
-### 6.2 Running Integration Tests Locally
+### 6.1 Running Integration Tests Locally
 ```bash
 # Start test dependencies
 docker-compose -f docker-compose.test.yml up -d
 
 # Wait for services to be ready
-./scripts/wait-for-services.sh
+sleep 10  # Or use a health check script
 
 # Run integration tests
 poetry run pytest -m integration -v
@@ -910,7 +844,6 @@ def configure_logging():
 - ✅ Proper test isolation (no test interdependencies)
 - ✅ Reasonable execution time (< 5 minutes for full suite)
 - ✅ Containerized dependencies (reproducible environment)
-- ✅ CI/CD integration (automated runs on PR/push)
 
 ## Key Differences from Unit Testing
 
@@ -954,15 +887,9 @@ def configure_logging():
 - [ ] Create seed data scripts
 - [ ] Configure test isolation and cleanup
 
-### ✅ Phase 6: CI/CD Integration
-- [ ] Create GitHub Actions workflow
-- [ ] Configure service containers
-- [ ] Set up coverage reporting
-
 ## Expected Outcomes
 - **70-80% coverage** of critical integration paths
-- **Zero failing tests** in CI pipeline
+- **Zero failing tests** in test suite
 - **Reproducible test environment** via Docker
-- **Automated testing** on every PR
 - **Fast feedback loop** for integration issues
 - **Confidence in deployments** through comprehensive testing
